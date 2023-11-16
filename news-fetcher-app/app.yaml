@@ -1,0 +1,14 @@
+# news fetcher api app.yaml file contents:
+runtime: python310
+env: standard
+
+service: getmachinanovanews
+
+instance_class: F1
+automatic_scaling:
+  min_instances: 0
+  max_instances: 1
+
+handlers:
+  - url: /.*
+    script: auto
