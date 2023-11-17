@@ -202,7 +202,7 @@ def fetch_news():
     seed_vectors = []
 
     # hardcode data science seed vectors (for now)
-    seed_vectors.append(model.encode('Microsoft Replaces Longtime CMO as It Enters New Era of AI'))
+    seed_vectors.append(model.encode('Tech firms invest in data science to imporove operations, customer experience, and marketing'))
     seed_vectors.append(model.encode('The AI Era Accelerates Agencies From Services To Solutions In 2024'))
     seed_vectors.append(model.encode('Analytics applications for marketing and advertising services'))
     seed_vectors.append(model.encode("Articles about marketers using machine learning to improve the customer experience"))
@@ -278,3 +278,6 @@ def get_custom_news():
 def home():
     # return basic html page "hello world"
     return "<h1>News Retriever Works!</h1>"
+
+if __name__ == "__main__":
+    app.run(host='127.0.0.1', port=8080)

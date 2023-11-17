@@ -4,7 +4,7 @@ env: standard
 
 service: getmachinanovanews
 
-instance_class: F1
+instance_class: F4_1G
 automatic_scaling:
   min_instances: 0
   max_instances: 1
@@ -12,3 +12,6 @@ automatic_scaling:
 handlers:
   - url: /.*
     script: auto
+    secure: always
+
+entrypoint: gunicorn -b :$PORT -t 6000 main:app
