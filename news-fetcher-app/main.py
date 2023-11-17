@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, make_response
 from google.cloud import storage
 import feedparser
 from PIL import Image
@@ -272,7 +272,34 @@ def get_custom_news():
     sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
 
     # return sorted news as json object
-    return json.dumps(sorted_news, indent=4)
+    json_news = json.dumps(sorted_news, indent=4, sort_keys=False)
+    response = make_response(json_news)
+    response.headers.set('Content-Type', 'application/json')
+    response.headers.set('Access-Control-Allow-Origin', '*')
+
+    return response
+
+# get default news recommendation
+@app.route("/get-news/v1", methods=['GET'])
+def get_default_news():
+    # get news from GCS bucket
+    gcs = storage.Client()
+    bucket = gcs.get_bucket("personal-website-35-machinanova-news")
+    gcs_file_string = 'retrieved_news/news.json'
+    blob = bucket.blob(gcs_file_string)
+    # read into dict
+    retrieved_news = json.loads(blob.download_as_string())
+    
+    # sort retrieved news by distance
+    sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
+
+    # return sorted news as json object
+    json_news = json.dumps(sorted_news, indent=4, sort_keys=False)
+    response = make_response(json_news)
+    response.headers.set('Content-Type', 'application/json')
+    response.headers.set('Access-Control-Allow-Origin', '*')
+
+    return response
 
 @app.route("/")
 def home():
