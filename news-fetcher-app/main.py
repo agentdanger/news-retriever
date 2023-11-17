@@ -142,11 +142,15 @@ def fetch_news():
                 temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('[]', '')
                 temp_dict['training_data'] = temp_dict['entry_title'] + ' ' + temp_dict['entry_summary']
             except:
-                temp_dict['entry_summary'] = None
+                temp_dict['entry_summary'] = 'No summary available'
             try:
                 temp_dict['entry_tags'] = article['tags']
             except:
-                temp_dict['entry_tags'] = None
+                temp_dict['entry_tags'] = [
+                    {
+                        'term': 'No tags available'
+                    }
+                ]
             # get article image
             info = None
             media_lookups = [
@@ -195,7 +199,7 @@ def fetch_news():
             try:
                 temp_dict['article_vector'] = model.encode(temp_dict['training_data'])
             except:
-                temp_dict['article_vector'] = None 
+                temp_dict['article_vector'] = [99.0 for i in range(384)]
 
             retrieved_news.append(temp_dict)
     
@@ -223,7 +227,7 @@ def fetch_news():
         try:
             article['article_vector'] = article['article_vector'].tolist()
         except:
-            article['article_vector'] = None
+            article['article_vector'] = [99.0 for i in range(384)]
 
     # sort retrieved news by distance
     sorted_news = sorted(retrieved_news, key=lambda k: k['article_distance'])
@@ -272,7 +276,7 @@ def get_custom_news():
     sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
 
     # return sorted news as json object
-    json_news = json.dumps(sorted_news, indent=4, sort_keys=False)
+    json_news = json.dumps(sorted_news, indent=4, sort_keys=False, allow_nan=False)
     response = make_response(json_news)
     response.headers.set('Content-Type', 'application/json')
     response.headers.set('Access-Control-Allow-Origin', '*')
@@ -294,7 +298,7 @@ def get_default_news():
     sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
 
     # return sorted news as json object
-    json_news = json.dumps(sorted_news, indent=4, sort_keys=False)
+    json_news = json.dumps(sorted_news, indent=4, sort_keys=False, allow_nan=False)
     response = make_response(json_news)
     response.headers.set('Content-Type', 'application/json')
     response.headers.set('Access-Control-Allow-Origin', '*')
