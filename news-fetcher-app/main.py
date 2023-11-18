@@ -96,7 +96,11 @@ feeds = {
 def get_response():
     response = {}
     for feed in feeds:
-        response[feed] = feedparser.parse(feeds[feed])
+        try:
+            response[feed] = feedparser.parse(feeds[feed])
+        except:
+            print('error: ' + feed)
+            continue
     return response
 
 @app.route("/fetch-news")
@@ -223,14 +227,13 @@ def fetch_news():
             if temp_euc_distance < article_distance:
                 article_distance = temp_euc_distance
         article['article_min_distance'] = article_distance
-        article['article_distance'] = np.average(distances)
         try:
             article['article_vector'] = article['article_vector'].tolist()
         except:
             article['article_vector'] = [99.0 for i in range(384)]
 
     # sort retrieved news by distance
-    sorted_news = sorted(retrieved_news, key=lambda k: k['article_distance'])
+    sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
 
     # Store news in Google Cloud Storage bucket
     gcs = storage.Client()
