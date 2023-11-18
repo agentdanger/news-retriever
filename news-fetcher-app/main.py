@@ -1,19 +1,15 @@
 from flask import Flask, request, make_response
 from google.cloud import storage
-import feedparser
-from PIL import Image
+
 import requests
 from io import BytesIO
-from bs4 import BeautifulSoup
-from sentence_transformers import SentenceTransformer
 import math
-import numpy as np
 import json
 import re
 
 app = Flask(__name__)
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+
 
 # get euclidean distance between two vectors
 
@@ -93,18 +89,25 @@ feeds = {
 }
 
 # get response from all feeds in json format
-def get_response():
-    response = {}
-    for feed in feeds:
-        try:
-            response[feed] = feedparser.parse(feeds[feed])
-        except:
-            print('error: ' + feed)
-            continue
-    return response
+
 
 @app.route("/fetch-news")
 def fetch_news():
+    def get_response():
+        import feedparser
+        response = {}
+        for feed in feeds:
+            try:
+                response[feed] = feedparser.parse(feeds[feed])
+            except:
+                print('error: ' + feed)
+                continue
+        return response
+    
+    from PIL import Image
+    from bs4 import BeautifulSoup
+    from sentence_transformers import SentenceTransformer
+    model = SentenceTransformer('all-MiniLM-L6-v2')
     # Fetch news from news API and encode it using sentence-transformers
     news_dict = get_response()
 
@@ -252,12 +255,13 @@ def fetch_news():
 # get custom news recommendation based on user input
 @app.route("/get-custom-news/v1", methods=['GET'])
 def get_custom_news():
+    from sentence_transformers import SentenceTransformer
+    model = SentenceTransformer('all-MiniLM-L6-v2')
     args = request.args
     # get user input
     user_input = args['query']
     # clean query to remove security risks
     user_input = re.sub(r'[^\x00-\x7f]',r'', user_input)
-    print(user_input)
     # encode user input
     user_vector = model.encode(user_input)
     # get news from GCS bucket
@@ -296,12 +300,12 @@ def get_default_news():
     blob = bucket.blob(gcs_file_string)
     # read into dict
     retrieved_news = json.loads(blob.download_as_string())
-    
-    # sort retrieved news by distance
-    sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
+
+    # filter to the first 200 articles
+    retrieved_news = retrieved_news[:200]
 
     # return sorted news as json object
-    json_news = json.dumps(sorted_news, indent=4, sort_keys=False, allow_nan=False)
+    json_news = json.dumps(retrieved_news, indent=4, sort_keys=False, allow_nan=False)
     response = make_response(json_news)
     response.headers.set('Content-Type', 'application/json')
     response.headers.set('Access-Control-Allow-Origin', '*')
