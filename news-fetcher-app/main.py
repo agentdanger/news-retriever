@@ -45,7 +45,6 @@ feeds = {
     'dataquest': 'https://www.dataquest.io/blog/feed/',
     'dataconomy': 'https://dataconomy.com/feed/',
     'machinelearningmastery': 'https://machinelearningmastery.com/feed/',
-    'medium': 'https://medium.com/feed/tag/data-science',
     'towardsdatascience': 'https://towardsdatascience.com/feed',
     'adexchanger': 'https://adexchanger.com/feed/',
     'adweek': 'https://www.adweek.com/feed/',
@@ -86,6 +85,17 @@ feeds = {
     'zdnet': 'https://www.zdnet.com/topic/artificial-intelligence/rss.xml',
     'techmeme': 'https://www.techmeme.com/feed.xml',
     'slashdot': 'http://rss.slashdot.org/Slashdot/slashdotMain',
+    'techradar': 'https://www.techradar.com/feeds/articletype/news',
+    'cnet': 'https://www.cnet.com/rss/news/',
+    'xda': 'https://www.xda-developers.com/feed/',
+    'hackernews': 'https://hnrss.org/frontpage',
+    'arstechnica': 'http://feeds.arstechnica.com/arstechnica/index',
+    'readwrite': 'https://readwrite.com/feed/',
+    'techrepublic': 'https://www.techrepublic.com/rssfeeds/articles/',
+    'motherboard': 'https://www.vice.com/en_us/rss/topic/tech',
+    'theatlantic': 'https://www.theatlantic.com/feed/channel/technology/',
+    'reuters': 'https://www.reutersagency.com/feed/?best-topics=tech&post_type=best',
+    'techtarget': 'https://searchsecurity.techtarget.com/rss/Security-Wire-Daily-News.xml',
 }
 
 # get response from all feeds in json format
