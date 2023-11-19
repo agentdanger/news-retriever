@@ -213,9 +213,10 @@ def fetch_news():
     seed_vectors = []
 
     # hardcode data science seed vectors (for now)
-    seed_vectors.append(model.encode('Tech firms invest in data science to imporove operations, customer experience, and marketing'))
-    seed_vectors.append(model.encode('The AI Era Accelerates Agencies From Services To Solutions In 2024'))
+    seed_vectors.append(model.encode('Tech firms invest in data science to improve operations, customer experience, and marketing'))
+    seed_vectors.append(model.encode('The AI Era Accelerates Marketing Agencies From Services To Solutions In 2024'))
     seed_vectors.append(model.encode('Analytics applications for marketing and advertising services'))
+    seed_vectors.append(model.encode('Data engineering and technology stack for business intelligence'))
     seed_vectors.append(model.encode("Articles about marketers using machine learning to improve the customer experience"))
 
     for article in retrieved_news:
