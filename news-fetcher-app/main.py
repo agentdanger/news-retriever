@@ -96,6 +96,10 @@ feeds = {
     'theatlantic': 'https://www.theatlantic.com/feed/channel/technology/',
     'reuters': 'https://www.reutersagency.com/feed/?best-topics=tech&post_type=best',
     'techtarget': 'https://searchsecurity.techtarget.com/rss/Security-Wire-Daily-News.xml',
+    'baseballprospectus': 'https://www.baseballprospectus.com/feed/',
+    'baseballamerica': 'https://www.baseballamerica.com/feed/',
+    'mlbtraderumors': 'https://www.mlbtraderumors.com/feed',
+    'theathletic': 'https://theathletic.com/feeds/rss/news/',
 }
 
 # get response from all feeds in json format
