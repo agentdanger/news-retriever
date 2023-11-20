@@ -312,9 +312,6 @@ def get_default_news():
     # read into dict
     retrieved_news = json.loads(blob.download_as_string())
 
-    # filter to the first 200 articles
-    retrieved_news = retrieved_news[:200]
-
     # return sorted news as json object
     json_news = json.dumps(retrieved_news, indent=4, sort_keys=False, allow_nan=False)
     response = make_response(json_news)
