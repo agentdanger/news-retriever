@@ -215,7 +215,6 @@ def fetch_news():
                         'url': 'https://courtneyperigo.com/assets/brittany.jpg'
                     }
                     temp_dict['entry_image'] = info
-                    continue
             # encode training data
             try:
                 temp_dict['article_vector'] = model.encode(temp_dict['training_data'])
