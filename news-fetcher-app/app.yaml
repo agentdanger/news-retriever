@@ -7,7 +7,7 @@ service: getmachinanovanews
 instance_class: F4_1G
 automatic_scaling:
   min_instances: 0
-  max_instances: 1
+  max_instances: 2
 
 handlers:
   - url: /.*

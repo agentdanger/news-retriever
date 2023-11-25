@@ -210,7 +210,7 @@ def fetch_news():
                     info = {
                         'width': 250,
                         'height': 250,
-                        'url': 'https://courtneyperigo.com/assets/brittany.jpg'
+                        'url': 'https://courtneyperigo.com/assets/brittany.png'
                     }
                     temp_dict['entry_image'] = info
             # encode training data

@@ -1,9 +1,9 @@
 # cron job to fetch news every 30 mins
 
 cron:
-- description: "fetch news every 3 hours"
+- description: "fetch news every 6 hours"
   url: /fetch-news
-  schedule: every 3 hours
+  schedule: every 6 hours
   target: getmachinanovanews
   retry_parameters:
     job_retry_limit: 2
