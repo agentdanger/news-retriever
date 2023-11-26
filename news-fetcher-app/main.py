@@ -156,9 +156,31 @@ def fetch_news():
                 temp_dict['entry_summary'] = ''.join(texts)
                 # remove ascii characters from article summary
                 temp_dict['entry_summary'] = re.sub(r'[^\x00-\x7f]',r'', temp_dict['entry_summary'])
+                # html link and a tags from summary
+                temp_dict['entry_summary'] = re.sub(r'<a.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</a>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<p.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</p>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<br.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</br>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<link.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<img.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</img>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<ul.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</ul>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<li.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</li>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<div.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</div>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<span.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</span>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<em.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</em>', ' ', temp_dict['entry_summary'])
+
                 # remove "\n" and "[]" from article summary
-                temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('\n', '')
-                temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('[]', '')
+                temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('\n', ' ')
+                temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('[]', ' ')
                 temp_dict['training_data'] = temp_dict['entry_title'] + ' ' + temp_dict['entry_summary']
             except:
                 temp_dict['entry_summary'] = 'No summary available'
