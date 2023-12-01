@@ -144,7 +144,7 @@ def fetch_news():
                 texts = soup.findAll(text=True)
                 temp_dict['entry_title'] = ''.join(texts)
                 # remove ascii characters from article title
-                temp_dict['entry_title'] = re.sub(r'[^\x00-\x7f]',r'', temp_dict['entry_title'])
+                #temp_dict['entry_title'] = re.sub(r'[^\x00-\x7f]',r'', temp_dict['entry_title'])
                 temp_dict['entry_link'] = article['link']
                 temp_dict['entry_published'] = article['published']
             except:
@@ -155,7 +155,7 @@ def fetch_news():
                 texts = soup.findAll(text=True)
                 temp_dict['entry_summary'] = ''.join(texts)
                 # remove ascii characters from article summary
-                temp_dict['entry_summary'] = re.sub(r'[^\x00-\x7f]',r'', temp_dict['entry_summary'])
+                #temp_dict['entry_summary'] = re.sub(r'[^\x00-\x7f]',r'', temp_dict['entry_summary'])
                 # html link and a tags from summary
                 temp_dict['entry_summary'] = re.sub(r'<a.*?>', ' ', temp_dict['entry_summary'])
                 temp_dict['entry_summary'] = re.sub(r'</a>', ' ', temp_dict['entry_summary'])
