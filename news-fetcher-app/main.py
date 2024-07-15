@@ -98,6 +98,25 @@ feeds = {
     'baseballamerica': 'https://www.baseballamerica.com/feed/',
     'mlbtraderumors': 'https://www.mlbtraderumors.com/feed',
     'theathletic': 'https://theathletic.com/feeds/rss/news/',
+    'mittechnology': 'https://www.technologyreview.com/feed/',
+    'techmeme': 'https://www.techmeme.com/feed.xml',
+    'darkreading': 'https://www.darkreading.com/rss.xml',
+    'electronicfrontierfoundation': 'https://www.eff.org/rss/updates.xml',
+    'ieeespectrum': 'https://spectrum.ieee.org/feeds/feed.rss',
+    'gigaom': 'https://gigaom.com/feed/',
+    'bleepingcomputer': 'https://www.bleepingcomputer.com/feed/',
+    'theregister': 'https://www.theregister.com/headlines.rss',
+    'theguardian': 'https://www.theguardian.com/world/rss',
+    'axios': 'https://api.axios.com/feed/',
+    'washingtonpost': 'https://feeds.washingtonpost.com/rss/national',
+    'theindependent': 'https://www.independent.co.uk/news/uk/rss',
+    'nprnews': 'https://feeds.npr.org/1001/rss.xml',
+    'bloombergmarkets': 'https://feeds.bloomberg.com/markets/news.rss',
+    'thegradient': 'https://thegradient.pub/rss/',
+    'kdnuggets': 'https://www.kdnuggets.com/feed',
+    'datasciencecentral': 'https://www.datasciencecentral.com/feed/?xn_auth=no',
+    'datafloq': 'https://datafloq.com/feed/',
+    
 }
 
 # get response from all feeds in json format

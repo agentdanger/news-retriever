@@ -14,4 +14,4 @@ handlers:
     script: auto
     secure: always
 
-entrypoint: gunicorn -b :$PORT -t 9000 main:app
+entrypoint: gunicorn -b :$PORT -t 18000 main:app
