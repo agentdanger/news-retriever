@@ -1,6 +1,14 @@
 # cron job to fetch news every 30 mins
 
 cron:
+- description: "optimize portfolio every weekday at 4:00"
+  url: /optimize
+  schedule: every mon,tue,wed,thu,fri 04:00
+  target: optimal-portfolio
+  retry_parameters:
+    job_retry_limit: 2
+    min_backoff_seconds: 2.5
+    max_backoff_seconds: 5.0
 - description: "fetch news every 6 hours"
   url: /fetch-news
   schedule: every 6 hours

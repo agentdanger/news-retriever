@@ -18,3 +18,9 @@ __pycache__/
 # Ignored by the build system
 /setup.cfg
 /env
+/.venv
+.venv
+
+# Ignored by the App Engine deployment system
+*.pyc
+*.ipynb

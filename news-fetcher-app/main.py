@@ -41,11 +41,11 @@ def euclidean_distance(vector1, vector2):
 # define feeds
 
 feeds = {
-    'analytics_vidhya': 'https://www.analyticsvidhya.com/feed/',
+    'analytics vidhya': 'https://www.analyticsvidhya.com/feed/',
     'dataquest': 'https://www.dataquest.io/blog/feed/',
     'dataconomy': 'https://dataconomy.com/feed/',
-    'machinelearningmastery': 'https://machinelearningmastery.com/feed/',
-    'towardsdatascience': 'https://towardsdatascience.com/feed',
+    'machinelearning mastery': 'https://machinelearningmastery.com/feed/',
+    'towards data science': 'https://towardsdatascience.com/feed',
     'adexchanger': 'https://adexchanger.com/feed/',
     'adweek': 'https://www.adweek.com/feed/',
     'wsj': 'https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml',
@@ -54,10 +54,10 @@ feeds = {
     'foxnews': 'http://feeds.foxnews.com/foxnews/latest',
     'nbcnews': 'http://feeds.nbcnews.com/nbcnews/public/news',
     'bbc': 'http://feeds.bbci.co.uk/news/rss.xml',
-    'apnews_topnews': 'https://rsshub.app/apnews/topics/ap-top-news',
-    'apnews_tech': 'https://rsshub.app/apnews/topics/technology',
+    'apnews topnews': 'https://rsshub.app/apnews/topics/ap-top-news',
+    'apnews tech': 'https://rsshub.app/apnews/topics/technology',
     'bloomberg': 'https://feeds.bloomberg.com/technology/news.rss',
-    'businessinsider': 'https://markets.businessinsider.com/rss/news',
+    'business insider': 'https://markets.businessinsider.com/rss/news',
     'cnbc': 'https://www.cnbc.com/id/100003114/device/rss/rss.html',
     'forbes': 'https://www.forbes.com/real-time/feed2/',
     'fortune': 'https://fortune.com/feed/',
@@ -77,7 +77,7 @@ feeds = {
     'androidauthority': 'https://www.androidauthority.com/feed/',
     'androidcentral': 'https://www.androidcentral.com/rss.xml',
     'androidpolice': 'https://www.androidpolice.com/feed/',
-    '9to5google': 'https://9to5google.com/feed/',
+    '9to5 google': 'https://9to5google.com/feed/',
     'techcrunch': 'https://techcrunch.com/feed/',
     'gizmodo': 'https://gizmodo.com/rss',
     'theverge': 'https://www.theverge.com/rss/index.xml',
@@ -94,27 +94,27 @@ feeds = {
     'theatlantic': 'https://www.theatlantic.com/feed/channel/technology/',
     'reuters': 'https://www.reutersagency.com/feed/?best-topics=tech&post_type=best',
     'techtarget': 'https://searchsecurity.techtarget.com/rss/Security-Wire-Daily-News.xml',
-    'baseballprospectus': 'https://www.baseballprospectus.com/feed/',
-    'baseballamerica': 'https://www.baseballamerica.com/feed/',
-    'mlbtraderumors': 'https://www.mlbtraderumors.com/feed',
-    'theathletic': 'https://theathletic.com/feeds/rss/news/',
-    'mittechnology': 'https://www.technologyreview.com/feed/',
+    'baseball prospectus': 'https://www.baseballprospectus.com/feed/',
+    'baseball america': 'https://www.baseballamerica.com/feed/',
+    'mlb trade rumors': 'https://www.mlbtraderumors.com/feed',
+    'the athletic': 'https://theathletic.com/feeds/rss/news/',
+    'mit technology': 'https://www.technologyreview.com/feed/',
     'techmeme': 'https://www.techmeme.com/feed.xml',
     'darkreading': 'https://www.darkreading.com/rss.xml',
-    'electronicfrontierfoundation': 'https://www.eff.org/rss/updates.xml',
-    'ieeespectrum': 'https://spectrum.ieee.org/feeds/feed.rss',
+    'electronic frontier foundation': 'https://www.eff.org/rss/updates.xml',
+    'ieee spectrum': 'https://spectrum.ieee.org/feeds/feed.rss',
     'gigaom': 'https://gigaom.com/feed/',
-    'bleepingcomputer': 'https://www.bleepingcomputer.com/feed/',
+    'bleeping computer': 'https://www.bleepingcomputer.com/feed/',
     'theregister': 'https://www.theregister.com/headlines.rss',
     'theguardian': 'https://www.theguardian.com/world/rss',
     'axios': 'https://api.axios.com/feed/',
-    'washingtonpost': 'https://feeds.washingtonpost.com/rss/national',
-    'theindependent': 'https://www.independent.co.uk/news/uk/rss',
-    'nprnews': 'https://feeds.npr.org/1001/rss.xml',
-    'bloombergmarkets': 'https://feeds.bloomberg.com/markets/news.rss',
-    'thegradient': 'https://thegradient.pub/rss/',
+    'washington post': 'https://feeds.washingtonpost.com/rss/national',
+    'the independent': 'https://www.independent.co.uk/news/uk/rss',
+    'npr news': 'https://feeds.npr.org/1001/rss.xml',
+    'bloomberg markets': 'https://feeds.bloomberg.com/markets/news.rss',
+    'the gradient': 'https://thegradient.pub/rss/',
     'kdnuggets': 'https://www.kdnuggets.com/feed',
-    'datasciencecentral': 'https://www.datasciencecentral.com/feed/?xn_auth=no',
+    'data science central': 'https://www.datasciencecentral.com/feed/?xn_auth=no',
     'datafloq': 'https://datafloq.com/feed/',
     
 }
@@ -152,7 +152,7 @@ def fetch_news():
             # remove ascii characters from feed title
             feed_title = re.sub(r'[^\x00-\x7f]',r'', feed_title)
         except:
-            print('no feed title: ' + news_source)
+            feed_title = news_source
             continue
         for article in news_dict[news_source]['entries']:
             temp_dict = {}
@@ -196,6 +196,13 @@ def fetch_news():
                 temp_dict['entry_summary'] = re.sub(r'</span>', ' ', temp_dict['entry_summary'])
                 temp_dict['entry_summary'] = re.sub(r'<em.*?>', ' ', temp_dict['entry_summary'])
                 temp_dict['entry_summary'] = re.sub(r'</em>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<strong.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</strong>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'<h1.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</h1>', ' ', temp_dict['entry_summary'])
+                # remove italics
+                temp_dict['entry_summary'] = re.sub(r'<i.*?>', ' ', temp_dict['entry_summary'])
+                temp_dict['entry_summary'] = re.sub(r'</i>', ' ', temp_dict['entry_summary'])
 
                 # remove "\n" and "[]" from article summary
                 temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('\n', ' ')
@@ -205,6 +212,22 @@ def fetch_news():
                 temp_dict['entry_summary'] = 'No summary available'
             try:
                 temp_dict['entry_tags'] = article['tags']
+
+                # Initialize lists to track unique tags and store filtered tags
+                unique_tags = []
+                filtered_tags = []
+
+                # Iterate over tags to lowercase and filter duplicates
+                for tag in temp_dict['entry_tags']:
+                    term_lower = tag['term'].lower()  # Convert the term to lowercase
+                    if term_lower not in unique_tags:  # Check for uniqueness
+                        unique_tags.append(term_lower)
+                        # Append the tag with the lowercase term while preserving other fields
+                        filtered_tags.append({'term': term_lower, **{k: v for k, v in tag.items() if k != 'term'}})
+
+                # Update temp_dict with filtered tags
+                temp_dict['entry_tags'] = filtered_tags
+                
             except:
                 temp_dict['entry_tags'] = [
                     {
