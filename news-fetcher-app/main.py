@@ -220,6 +220,8 @@ def fetch_news():
                 # Iterate over tags to normalize, lowercase, and filter duplicates
                 for tag in temp_dict['entry_tags']:
                     term_lower = re.sub(r'\s+', ' ', tag['term'].strip().lower())  # Normalize whitespace, lowercase
+                    if term_lower.startswith('/') or term_lower.startswith('\\'):  # Skip tags starting with "/" or "\"
+                        continue
                     if term_lower not in unique_tags:  # Check for uniqueness
                         unique_tags.add(term_lower)
                         # Append the tag with the normalized term while preserving other fields
