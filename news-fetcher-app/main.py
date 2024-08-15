@@ -214,26 +214,22 @@ def fetch_news():
                 temp_dict['entry_tags'] = article['tags']
 
                 # Initialize lists to track unique tags and store filtered tags
-                unique_tags = []
+                unique_tags = set()
                 filtered_tags = []
 
-                # Iterate over tags to lowercase and filter duplicates
+                # Iterate over tags to normalize, lowercase, and filter duplicates
                 for tag in temp_dict['entry_tags']:
-                    term_lower = tag['term'].lower()  # Convert the term to lowercase
+                    term_lower = re.sub(r'\s+', ' ', tag['term'].strip().lower())  # Normalize whitespace, lowercase
                     if term_lower not in unique_tags:  # Check for uniqueness
-                        unique_tags.append(term_lower)
-                        # Append the tag with the lowercase term while preserving other fields
+                        unique_tags.add(term_lower)
+                        # Append the tag with the normalized term while preserving other fields
                         filtered_tags.append({'term': term_lower, **{k: v for k, v in tag.items() if k != 'term'}})
 
                 # Update temp_dict with filtered tags
                 temp_dict['entry_tags'] = filtered_tags
-                
+
             except:
-                temp_dict['entry_tags'] = [
-                    {
-                        'term': 'No tags available'
-                    }
-                ]
+                temp_dict['entry_tags'] = [{'term': 'No tags available'}]
             # get article image
             info = None
             media_lookups = [
