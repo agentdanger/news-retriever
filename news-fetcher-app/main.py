@@ -1,45 +1,25 @@
 from flask import Flask, request, make_response
 from google.cloud import storage
 
+import asyncio
+import aiohttp
+import feedparser
 import requests
 from io import BytesIO
 import math
 import json
 import re
+from datetime import datetime, timezone, timedelta
+from sentence_transformers import SentenceTransformer
+from PIL import Image
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
+# Initialize the model globally to avoid loading it multiple times
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
-
-# get euclidean distance between two vectors
-
-def euclidean_distance(vector1, vector2):
-    """
-    Calculates the euclidean distance between two vectors.
-
-    Args:
-    vector1: The first vector.
-    vector2: The second vector.
-
-    Returns:
-    The euclidean distance between the two vectors.
-    """
-
-    # Calculate the squared differences between the corresponding elements of the two vectors.
-    squared_differences = [
-    (vector1[i] - vector2[i])**2 for i in range(len(vector1))
-    ]
-
-    # Sum the squared differences.
-    sum_of_squared_differences = sum(squared_differences)
-
-    # Take the square root of the sum of the squared differences.
-    euclidean_distance = math.sqrt(sum_of_squared_differences)
-
-    return euclidean_distance
-
-# define feeds
-
+# Define feeds and other constants
 feeds = {
     'analytics vidhya': 'https://www.analyticsvidhya.com/feed/',
     'dataquest': 'https://www.dataquest.io/blog/feed/',
@@ -78,7 +58,6 @@ feeds = {
     'androidcentral': 'https://www.androidcentral.com/rss.xml',
     'androidpolice': 'https://www.androidpolice.com/feed/',
     '9to5 google': 'https://9to5google.com/feed/',
-    'techcrunch': 'https://techcrunch.com/feed/',
     'gizmodo': 'https://gizmodo.com/rss',
     'theverge': 'https://www.theverge.com/rss/index.xml',
     'engadget': 'https://www.engadget.com/rss.xml',
@@ -114,151 +93,149 @@ feeds = {
     'bloomberg markets': 'https://feeds.bloomberg.com/markets/news.rss',
     'the gradient': 'https://thegradient.pub/rss/',
     'kdnuggets': 'https://www.kdnuggets.com/feed',
-    'data science central': 'https://www.datasciencecentral.com/feed/?xn_auth=no',
+    'data science central': 'https://www.datasciencecentral.com/category/business-topics/feed/',
     'datafloq': 'https://datafloq.com/feed/',
-    
 }
 
-# get response from all feeds in json format
+MAX_ARTICLES_PER_FEED = 25  # Limit articles per feed
+PROCESSING_TIMEOUT = 290   # Timeout in seconds (adjust as needed)
 
+# Timezone and date parsing utilities
+TIMEZONE_OFFSETS = {
+    'EST': '-0500',
+    'EDT': '-0400',
+    'CST': '-0600',
+    'CDT': '-0500',
+    'MST': '-0700',
+    'MDT': '-0600',
+    'PST': '-0800',
+    'PDT': '-0700',
+    'GMT': '+0000',
+    'UTC': '+0000'
+}
 
-@app.route("/fetch-news")
-def fetch_news():
-    def get_response():
-        import feedparser
-        response = {}
-        for feed in feeds:
-            try:
-                response[feed] = feedparser.parse(feeds[feed])
-            except:
-                print('error: ' + feed)
-                continue
-        return response
-    
-    from PIL import Image
-    from bs4 import BeautifulSoup
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    # Fetch news from news API and encode it using sentence-transformers
-    news_dict = get_response()
+# Regular expression to match ISO 8601 format strings
+ISO_8601_REGEX = re.compile(
+    r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?'
+)
 
-    retrieved_news = []
+def is_article_from_recent_days(article_date):
+    """
+    Checks if the article's published date is from today, yesterday, or tomorrow (in UTC).
 
-    for news_source in feeds.keys():
-        # get feed image
-        info = None
-        try:
-            feed_title = news_dict[news_source]['feed']['title']
-            # remove ascii characters from feed title
-            feed_title = re.sub(r'[^\x00-\x7f]',r'', feed_title)
-        except:
-            feed_title = news_source
-            continue
-        for article in news_dict[news_source]['entries']:
-            temp_dict = {}
-            try:
-                temp_dict['feed_title'] = feed_title
-                # clean article title remove html tags using beautiful soup
-                soup = BeautifulSoup(article['title'], 'html.parser')
-                texts = soup.findAll(text=True)
-                temp_dict['entry_title'] = ''.join(texts)
-                # remove ascii characters from article title
-                #temp_dict['entry_title'] = re.sub(r'[^\x00-\x7f]',r'', temp_dict['entry_title'])
-                temp_dict['entry_link'] = article['link']
-                temp_dict['entry_published'] = article['published']
-            except:
-                continue
-            try:
-                # clean article summary remove html tags using beautiful soup
-                soup = BeautifulSoup(article['summary'], 'html.parser')
-                texts = soup.findAll(text=True)
-                temp_dict['entry_summary'] = ''.join(texts)
-                # remove ascii characters from article summary
-                #temp_dict['entry_summary'] = re.sub(r'[^\x00-\x7f]',r'', temp_dict['entry_summary'])
-                # html link and a tags from summary
-                temp_dict['entry_summary'] = re.sub(r'<a.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</a>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<p.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</p>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<br.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</br>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<link.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<img.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</img>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<ul.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</ul>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<li.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</li>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<div.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</div>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<span.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</span>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<em.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</em>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<strong.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</strong>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'<h1.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</h1>', ' ', temp_dict['entry_summary'])
-                # remove italics
-                temp_dict['entry_summary'] = re.sub(r'<i.*?>', ' ', temp_dict['entry_summary'])
-                temp_dict['entry_summary'] = re.sub(r'</i>', ' ', temp_dict['entry_summary'])
+    Args:
+    article_date: The published date string of the article.
 
-                # remove "\n" and "[]" from article summary
-                temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('\n', ' ')
-                temp_dict['entry_summary'] = temp_dict['entry_summary'].replace('[]', ' ')
-                temp_dict['training_data'] = temp_dict['entry_title'] + ' ' + temp_dict['entry_summary']
-            except:
-                temp_dict['entry_summary'] = 'No summary available'
-            try:
-                temp_dict['entry_tags'] = article['tags']
+    Returns:
+    True if the article was published on today, yesterday, or tomorrow (in UTC), False otherwise.
+    """
+    try:
+        article_datetime = None
 
-                # Initialize lists to track unique tags and store filtered tags
-                unique_tags = set()
-                filtered_tags = []
-
-                # Iterate over tags to normalize, lowercase, and filter duplicates
-                for tag in temp_dict['entry_tags']:
-                    term_lower = re.sub(r'\s+', ' ', tag['term'].strip().lower())  # Normalize whitespace, lowercase
-                    if term_lower.startswith('/') or term_lower.startswith('\\'):  # Skip tags starting with "/" or "\"
-                        continue
-                    if term_lower not in unique_tags:  # Check for uniqueness
-                        unique_tags.add(term_lower)
-                        # Append the tag with the normalized term while preserving other fields
-                        filtered_tags.append({'term': term_lower, **{k: v for k, v in tag.items() if k != 'term'}})
-
-                # Update temp_dict with filtered tags
-                temp_dict['entry_tags'] = filtered_tags
-
-            except:
-                temp_dict['entry_tags'] = [{'term': 'No tags available'}]
-            # get article image
-            info = None
-            media_lookups = [
-                'media_thumbnail',
-                'media_content',
-            ]
-            for lookup in media_lookups:
-                if lookup in article.keys():
-                    try:
-                        news_source_img = article[lookup][0]['url']
-                        response = requests.get(news_source_img)
-                        image = Image.open(BytesIO(response.content))
-                        width, height = image.size
-                        info = {
-                            'width': width,
-                            'height': height,
-                            'url': news_source_img
-                        }
-                        temp_dict['entry_image'] = info
-                    except:
-                        continue
+        # Handle ISO 8601 format using regex
+        if ISO_8601_REGEX.match(article_date):
+            article_datetime = datetime.fromisoformat(article_date)
+        else:
+            # For RFC 822 and other formats, replace named time zones (e.g., EDT, GMT) with their numeric offsets
+            for tz_name, tz_offset in TIMEZONE_OFFSETS.items():
+                if tz_name in article_date:
+                    article_date = article_date.replace(tz_name, tz_offset)
                     break
-                else:
-                    continue
-            else:
+
+            # Parse the date from the article (RFC-822 style)
+            article_datetime = datetime.strptime(article_date, '%a, %d %b %Y %H:%M:%S %z')
+
+        # Normalize the article date to UTC
+        article_datetime_utc = article_datetime.astimezone(timezone.utc)
+
+        # Get today's date in UTC (timezone-aware, without time)
+        today_utc = datetime.now(tz=timezone.utc).date()
+        yesterday_utc = today_utc - timedelta(days=1)
+        tomorrow_utc = today_utc + timedelta(days=1)
+
+        # Check if the article's UTC date is from today, yesterday, or tomorrow
+        return article_datetime_utc.date() in {yesterday_utc, today_utc, tomorrow_utc}
+
+    except Exception as e:
+        print(f"Error parsing date: {e}")
+        return False
+
+def euclidean_distance(vector1, vector2):
+    """
+    Calculates the Euclidean distance between two vectors.
+
+    Args:
+    vector1: The first vector.
+    vector2: The second vector.
+
+    Returns:
+    The Euclidean distance between the two vectors.
+    """
+    # Calculate the squared differences between the corresponding elements of the two vectors.
+    squared_differences = [(vector1[i] - vector2[i]) ** 2 for i in range(len(vector1))]
+
+    # Sum the squared differences.
+    sum_of_squared_differences = sum(squared_differences)
+
+    # Take the square root of the sum of the squared differences.
+    return math.sqrt(sum_of_squared_differences)
+
+async def fetch_feed(session, feed_name, feed_url):
+    try:
+        async with session.get(feed_url) as response:
+            feed_data = await response.text()
+            parsed_feed = feedparser.parse(feed_data)
+            return feed_name, parsed_feed
+    except Exception as e:
+        print(f'Error fetching feed {feed_name}: {e}')
+        return feed_name, None
+
+async def get_responses():
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_feed(session, name, url) for name, url in feeds.items()]
+        return await asyncio.gather(*tasks)
+
+async def process_article(article, feed_title):
+    try:
+        if not is_article_from_recent_days(article.get('published', '')):
+            return None
+
+        temp_dict = {}
+        temp_dict['feed_title'] = feed_title
+
+        # Process title
+        soup = BeautifulSoup(article.get('title', ''), 'html.parser')
+        temp_dict['entry_title'] = ''.join(soup.findAll(text=True))
+        temp_dict['entry_link'] = article.get('link', '')
+        temp_dict['entry_published'] = article.get('published', '')
+
+        # Process summary
+        soup = BeautifulSoup(article.get('summary', ''), 'html.parser')
+        temp_dict['entry_summary'] = ''.join(soup.findAll(text=True))
+        temp_dict['training_data'] = temp_dict['entry_title'] + ' ' + temp_dict['entry_summary']
+
+        # Process tags
+        temp_dict['entry_tags'] = article.get('tags', [{'term': 'No tags available'}])
+        unique_tags = set()
+        filtered_tags = []
+
+        for tag in temp_dict['entry_tags']:
+            term_lower = re.sub(r'\s+', ' ', tag['term'].strip().lower())
+            if term_lower.startswith('/') or term_lower.startswith('\\'):
+                continue
+            if term_lower not in unique_tags:
+                unique_tags.add(term_lower)
+                filtered_tags.append({'term': term_lower})
+
+        temp_dict['entry_tags'] = filtered_tags
+
+        # Process image
+        info = None
+        media_lookups = ['media_thumbnail', 'media_content']
+        for lookup in media_lookups:
+            if lookup in article.keys():
                 try:
-                    news_source_img = news_dict[news_source]['feed']['image']['href']
+                    news_source_img = article[lookup][0]['url']
                     response = requests.get(news_source_img)
                     image = Image.open(BytesIO(response.content))
                     width, height = image.size
@@ -269,47 +246,100 @@ def fetch_news():
                     }
                     temp_dict['entry_image'] = info
                 except:
+                    continue
+                break
+        else:
+            try:
+                news_source_img = article.get('image', {}).get('href', '')
+                if news_source_img:
+                    response = requests.get(news_source_img)
+                    image = Image.open(BytesIO(response.content))
+                    width, height = image.size
                     info = {
-                        'width': 250,
-                        'height': 250,
-                        'url': 'https://courtneyperigo.com/assets/brittany.png'
+                        'width': width,
+                        'height': height,
+                        'url': news_source_img
                     }
-                    temp_dict['entry_image'] = info
-            # encode training data
-            try:
-                temp_dict['article_vector'] = model.encode(temp_dict['training_data'])
+                else:
+                    raise ValueError("No image URL found")
+                temp_dict['entry_image'] = info
             except:
-                temp_dict['article_vector'] = [99.0 for i in range(384)]
+                info = {
+                    'width': 250,
+                    'height': 250,
+                    'url': 'https://courtneyperigo.com/assets/brittany.png'
+                }
+                temp_dict['entry_image'] = info
 
-            retrieved_news.append(temp_dict)
-    
-    seed_vectors = []
+        # Encode training data
+        temp_dict['article_vector'] = model.encode(temp_dict['training_data']).tolist()
 
-    # hardcode data science seed vectors (for now)
-    seed_vectors.append(model.encode('Tech firms invest in data science to improve operations, customer experience, and marketing'))
-    seed_vectors.append(model.encode('The AI Era Accelerates Marketing Agencies From Services To Solutions In 2024'))
-    seed_vectors.append(model.encode('Analytics applications for marketing and advertising services'))
-    seed_vectors.append(model.encode('Data engineering and technology stack for business intelligence'))
-    seed_vectors.append(model.encode("Articles about marketers using machine learning to improve the customer experience"))
+        return temp_dict
+    except Exception as e:
+        print(f"Error processing article: {e}")
+        return None
 
+async def process_articles(news_dict):
+    tasks = []
+    for news_source, feed_data in news_dict.items():
+        if not feed_data:
+            continue
+        feed_title = feed_data['feed'].get('title', news_source)
+        entries = feed_data['entries']
+        
+        # Filter entries to only those from recent days
+        recent_entries = [article for article in entries if is_article_from_recent_days(article.get('published', ''))]
+        
+        # Now limit to MAX_ARTICLES_PER_FEED
+        limited_entries = recent_entries[:MAX_ARTICLES_PER_FEED]
+        
+        for article in limited_entries:
+            tasks.append(process_article(article, feed_title))
+    # Process articles with a timeout
+    return await asyncio.gather(*tasks)
+
+@app.route("/fetch-news")
+def fetch_news():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    # Fetch feeds asynchronously
+    feed_results = loop.run_until_complete(get_responses())
+    news_dict = {name: data for name, data in feed_results if data is not None}
+
+    # Process articles asynchronously with timeout
+    try:
+        articles = loop.run_until_complete(
+            asyncio.wait_for(process_articles(news_dict), timeout=PROCESSING_TIMEOUT)
+        )
+    except asyncio.TimeoutError:
+        print("Processing articles timed out")
+        articles = []  # Proceed with whatever has been processed
+
+    # Filter out None results
+    retrieved_news = [article for article in articles if article is not None]
+
+    # If no articles were processed, return an error message
+    if not retrieved_news:
+        return "<h1>No news articles were fetched.</h1>"
+
+    # Proceed with distance calculations
+    seed_vectors = [
+        model.encode('Tech firms invest in data science to improve operations, customer experience, and marketing'),
+        model.encode('The AI Era Accelerates Marketing Agencies From Services To Solutions In 2024'),
+        model.encode('Analytics applications for marketing and advertising services'),
+        model.encode('Data engineering and technology stack for business intelligence'),
+        model.encode('Articles about marketers using machine learning to improve the customer experience')
+    ]
+
+    # Calculate distances
     for article in retrieved_news:
-        article_distance = 999999999999
-        distances = []
-        for seed in seed_vectors:
-            try:
-                temp_euc_distance = euclidean_distance(seed, article['article_vector'])
-                distances.append(temp_euc_distance)
-            except:
-                continue
-            if temp_euc_distance < article_distance:
-                article_distance = temp_euc_distance
+        article_distance = min(
+            euclidean_distance(seed, article['article_vector']) for seed in seed_vectors
+        )
         article['article_min_distance'] = article_distance
-        try:
-            article['article_vector'] = article['article_vector'].tolist()
-        except:
-            article['article_vector'] = [99.0 for i in range(384)]
 
-    # sort retrieved news by distance
+    # Sort and store the news
     sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
 
     # Store news in Google Cloud Storage bucket
@@ -317,25 +347,22 @@ def fetch_news():
     bucket = gcs.get_bucket("personal-website-35-machinanova-news")
     gcs_file_string = 'retrieved_news/news.json'
     blob = bucket.blob(gcs_file_string)
-    blob.upload_from_string(data=json.dumps(sorted_news, 
-                                            indent=4
-                                            ), 
-                                            content_type='application/json',
-                                            timeout=300)
+    blob.upload_from_string(
+        data=json.dumps(sorted_news, indent=4),
+        content_type='application/json',
+        timeout=300
+    )
 
-    # return basic html page "news fetched"
     return "<h1>News Fetched!</h1>"
 
 # get custom news recommendation based on user input
 @app.route("/get-custom-news/v1", methods=['GET'])
 def get_custom_news():
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer('all-MiniLM-L6-v2')
     args = request.args
     # get user input
-    user_input = args['query']
+    user_input = args.get('query', '')
     # clean query to remove security risks
-    user_input = re.sub(r'[^\x00-\x7f]',r'', user_input)
+    user_input = re.sub(r'[^\x00-\x7f]', r'', user_input)
     # encode user input
     user_vector = model.encode(user_input)
     # get news from GCS bucket
@@ -351,8 +378,8 @@ def get_custom_news():
         try:
             article['article_min_distance'] = euclidean_distance(user_vector, article['article_vector'])
         except:
-            article['user_distance'] = 999999999999
-    
+            article['article_min_distance'] = float('inf')
+
     # sort retrieved news by distance
     sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
 
