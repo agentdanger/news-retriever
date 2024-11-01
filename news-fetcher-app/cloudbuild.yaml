@@ -1,0 +1,9 @@
+# create cloud build configuration file
+# deploy from github.com 
+# deploy to google cloud run
+steps:
+# deploy to google app engine
+- name: "gcr.io/cloud-builders/gcloud"
+  args: ["app", "deploy"]
+timeout: "1600s"
+
