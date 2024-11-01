@@ -4,6 +4,7 @@
 steps:
 # deploy to google app engine
 - name: "gcr.io/cloud-builders/gcloud"
+  dir: "news-fetcher-app"
   args: ["app", "deploy"]
 timeout: "1600s"
 
