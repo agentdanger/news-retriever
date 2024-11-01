@@ -83,7 +83,7 @@ feeds = {
     'datafloq': 'https://datafloq.com/feed/',
 }
 
-MAX_ARTICLES_PER_FEED = 5  # Limit articles per feed
+MAX_ARTICLES_PER_FEED = 25 # Limit articles per feed
 PROCESSING_TIMEOUT = 290   # Timeout in seconds (adjust as needed)
 
 # Timezone and date parsing utilities
