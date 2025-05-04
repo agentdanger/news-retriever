@@ -20,10 +20,14 @@ frozenlist==1.6.0
 google-api-core==2.25.0rc0
 google-auth==2.39.0
 google-cloud-core==2.4.3
+google-cloud-secret-manager==2.23.3
 google-cloud-storage==3.1.0
 google-crc32c==1.7.1
 google-resumable-media==2.7.2
 googleapis-common-protos==1.70.0
+grpc-google-iam-v1==0.14.2
+grpcio==1.71.0
+grpcio-status==1.71.0
 gunicorn==23.0.0
 h11==0.16.0
 httpcore==1.0.9
@@ -40,7 +44,7 @@ packaging==25.0
 pillow==11.2.1
 propcache==0.3.1
 proto-plus==1.26.1
-protobuf==6.30.2
+protobuf==5.29.4
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pydantic==2.11.4

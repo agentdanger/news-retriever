@@ -5,7 +5,17 @@ import re
 import openai
 import os
 
-openai.api_key = os.environ["OPENAI_API_KEY"]
+from google.cloud import secretmanager
+
+def _resolve_openai_key(raw: str) -> str:
+    """Turn 'projects/.../versions/latest' into the real key, or return raw."""
+    if raw.startswith("projects/"):
+        sm = secretmanager.SecretManagerServiceClient()
+        key_bytes = sm.access_secret_version(request={"name": raw}).payload.data
+        return key_bytes.decode("utf-8")
+    return raw
+
+openai.api_key = _resolve_openai_key(os.environ["OPENAI_API_KEY"])
 
 app = Flask(__name__)
 
