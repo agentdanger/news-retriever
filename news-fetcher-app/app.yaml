@@ -14,4 +14,8 @@ handlers:
     script: auto
     secure: always
 
+env_variables:
+  # Set the environment variables for your application here
+  OPENAI_API_KEY: 'projects/869438047749/secrets/news-retriever-openai-key/versions/latest'
+
 entrypoint: gunicorn -b :$PORT -t 18000 main:app

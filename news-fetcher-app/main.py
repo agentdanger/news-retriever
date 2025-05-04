@@ -2,6 +2,10 @@ from flask import Flask, request, make_response
 from google.cloud import storage
 import json
 import re
+import openai
+import os
+
+openai.api_key = os.environ["OPENAI_API_KEY"]
 
 app = Flask(__name__)
 
@@ -181,9 +185,7 @@ def fetch_news():
     from bs4 import BeautifulSoup
     from PIL import Image
 
-    # Load the model here to avoid loading it on startup
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    
 
     async def fetch_feed(session, feed_name, feed_url):
         try:
@@ -262,7 +264,14 @@ def fetch_news():
                 temp_dict['entry_image'] = info
 
             # Encode training data
-            temp_dict['article_vector'] = model.encode(temp_dict['training_data']).tolist()
+            response = openai.embeddings.create(
+                model="text-embedding-3-small",         # latest general-purpose model
+                input=temp_dict['training_data']
+            )
+
+            response_list = response.data[0].embedding
+
+            temp_dict['article_vector'] = response_list
 
             return temp_dict
         except Exception as e:
@@ -312,13 +321,31 @@ def fetch_news():
         return "<h1>No news articles were fetched.</h1>"
 
     # Proceed with distance calculations
-    seed_vectors = [
-        model.encode('Tech firms invest in data science to improve operations, customer experience, and marketing'),
-        model.encode('The AI Era Accelerates Marketing Agencies From Services To Solutions In 2024'),
-        model.encode('Analytics applications for marketing and advertising services'),
-        model.encode('Data engineering and technology stack for business intelligence'),
-        model.encode('Articles about marketers using machine learning to improve the customer experience')
+
+    seed_1 = 'Tech firms invest in data science to improve operations, customer experience, and marketing'
+    seed_2 = 'The AI Era Accelerates Marketing Agencies From Services To Solutions In 2024'
+    seed_3 = 'Analytics applications for marketing and advertising services'
+    seed_4 = 'Data engineering and technology stack for business intelligence'
+    seed_5 = 'Articles about marketers using machine learning to improve the customer experience'
+
+    seeds_list = [
+        seed_1,
+        seed_2,
+        seed_3,
+        seed_4,
+        seed_5
     ]
+
+    vectors = []
+
+    for seed in seeds_list:
+        response = openai.embeddings.create(
+            model="text-embedding-3-small",
+            input=seed
+        )
+        vectors.append(response.data[0].embedding)
+
+    seed_vectors = vectors
 
     # Calculate distances
     for article in retrieved_news:
@@ -342,45 +369,6 @@ def fetch_news():
     )
 
     return "<h1>News Fetched!</h1>"
-
-@app.route("/get-custom-news/v1", methods=['GET'])
-def get_custom_news():
-    from google.cloud import storage
-
-    args = request.args
-    user_input = args.get('query', '')
-    user_input = re.sub(r'[^\x00-\x7f]', r'', user_input)
-
-    # Load the model here to avoid loading it on startup
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-
-    user_vector = model.encode(user_input)
-
-    # Get news from GCS bucket
-    gcs = storage.Client()
-    bucket = gcs.get_bucket("personal-website-35-machinanova-news")
-    gcs_file_string = 'retrieved_news/news.json'
-    blob = bucket.blob(gcs_file_string)
-
-    retrieved_news = json.loads(blob.download_as_string())
-
-    # Calculate distances
-    for article in retrieved_news:
-        try:
-            article['article_min_distance'] = euclidean_distance(user_vector, article['article_vector'])
-        except:
-            article['article_min_distance'] = float('inf')
-
-    # Sort and return
-    sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
-
-    json_news = json.dumps(sorted_news, indent=4, sort_keys=False, allow_nan=False)
-    response = make_response(json_news)
-    response.headers.set('Content-Type', 'application/json')
-    response.headers.set('Access-Control-Allow-Origin', '*')
-
-    return response
 
 @app.route("/get-news/v1", methods=['GET'])
 def get_default_news():
