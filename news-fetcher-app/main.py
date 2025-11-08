@@ -95,6 +95,11 @@ feeds = {
     'kdnuggets': 'https://www.kdnuggets.com/feed',
     'data science central': 'https://www.datasciencecentral.com/category/business-topics/feed/',
     'datafloq': 'https://datafloq.com/feed/',
+    'HubSpot Marketing Blog': 'https://blog.hubspot.com/marketing/rss.xml',
+    'Moz Blog': 'https://moz.com/blog/feed.xml',
+    'Semrush Blog': 'https://www.semrush.com/blog/feed/',
+    'Chief Martec': 'https://chiefmartec.com/feed',
+    'MarTech (News & Insights)': 'https://martech.org/feed/'
 }
 
 MAX_ARTICLES_PER_FEED = 25 # Limit articles per feed
