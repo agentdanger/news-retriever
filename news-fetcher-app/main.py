@@ -105,6 +105,29 @@ feeds = {
 MAX_ARTICLES_PER_FEED = 25 # Limit articles per feed
 PROCESSING_TIMEOUT = 290   # Timeout in seconds (adjust as needed)
 
+# Seed topics for ranking articles by relevance
+SEED_TOPICS = [
+    'Tech firms invest in data science to improve operations, customer experience, and marketing',
+    'The AI Era Accelerates Marketing Agencies From Services To Solutions In 2024',
+    'Analytics applications for marketing and advertising services',
+    'Data engineering and technology stack for business intelligence',
+    'Articles about marketers using machine learning to improve the customer experience'
+]
+
+# Cache for seed vectors (computed once at startup)
+_seed_vectors_cache = None
+
+def get_seed_vectors():
+    """Get seed vectors, computing them once and caching for reuse."""
+    global _seed_vectors_cache
+    if _seed_vectors_cache is None:
+        response = openai.embeddings.create(
+            model="text-embedding-3-small",
+            input=SEED_TOPICS  # batch all seeds in one API call
+        )
+        _seed_vectors_cache = [item.embedding for item in response.data]
+    return _seed_vectors_cache
+
 # Timezone and date parsing utilities
 TIMEZONE_OFFSETS = {
     'EST': '-0500',
@@ -166,39 +189,26 @@ def is_article_from_recent_days(article_date):
         print(f"Error parsing date: {e}")
         return False
 
-def euclidean_distance(vector1, vector2):
+def cosine_similarity(vec1, vec2):
     """
-    Calculates the Euclidean distance between two vectors.
+    Calculates cosine similarity between two vectors.
+    OpenAI embeddings are normalized, so dot product equals cosine similarity.
 
-    Args:
-    vector1: The first vector.
-    vector2: The second vector.
-
-    Returns:
-    The Euclidean distance between the two vectors.
+    Returns a value between -1 and 1, where 1 means identical.
     """
-    import math
-
-    # Calculate the squared differences between the corresponding elements of the two vectors.
-    squared_differences = [(vector1[i] - vector2[i]) ** 2 for i in range(len(vector1))]
-
-    # Sum the squared differences.
-    sum_of_squared_differences = sum(squared_differences)
-
-    # Take the square root of the sum of the squared differences.
-    return math.sqrt(sum_of_squared_differences)
+    return sum(a * b for a, b in zip(vec1, vec2))
 
 @app.route("/fetch-news")
 def fetch_news():
+    # Only allow Cloud Scheduler to trigger this in production
+    if os.environ.get('GAE_ENV', '') == 'standard':
+        if request.headers.get('X-Appengine-Cron') != 'true':
+            return "Forbidden", 403
+
     import asyncio
     import aiohttp
     import feedparser
-    from datetime import datetime, timezone, timedelta
-    import math
-    from io import BytesIO
-    import requests
     from bs4 import BeautifulSoup
-    from PIL import Image
 
     
 
@@ -251,42 +261,17 @@ def fetch_news():
 
             temp_dict['entry_tags'] = filtered_tags
 
-            # Process image
-            info = None
-            media_lookups = ['media_thumbnail', 'media_content']
-            for lookup in media_lookups:
-                if lookup in article.keys():
+            # Process image - just store URL without fetching (avoids blocking sync calls)
+            default_image = 'https://courtneyperigo.com/assets/brittany.png'
+            image_url = default_image
+            for lookup in ['media_thumbnail', 'media_content']:
+                if lookup in article and article[lookup]:
                     try:
-                        news_source_img = article[lookup][0]['url']
-                        response = requests.get(news_source_img)
-                        image = Image.open(BytesIO(response.content))
-                        width, height = image.size
-                        info = {
-                            'width': width,
-                            'height': height,
-                            'url': news_source_img
-                        }
-                        temp_dict['entry_image'] = info
-                    except:
+                        image_url = article[lookup][0]['url']
+                        break
+                    except (KeyError, IndexError):
                         continue
-                    break
-            else:
-                info = {
-                    'width': 250,
-                    'height': 250,
-                    'url': 'https://courtneyperigo.com/assets/brittany.png'
-                }
-                temp_dict['entry_image'] = info
-
-            # Encode training data
-            response = openai.embeddings.create(
-                model="text-embedding-3-small",         # latest general-purpose model
-                input=temp_dict['training_data']
-            )
-
-            response_list = response.data[0].embedding
-
-            temp_dict['article_vector'] = response_list
+            temp_dict['entry_image'] = {'url': image_url}
 
             return temp_dict
         except Exception as e:
@@ -335,42 +320,36 @@ def fetch_news():
     if not retrieved_news:
         return "<h1>No news articles were fetched.</h1>"
 
-    # Proceed with distance calculations
+    # Batch embed all articles in one API call (major cost savings)
+    training_texts = [article['training_data'] for article in retrieved_news]
 
-    seed_1 = 'Tech firms invest in data science to improve operations, customer experience, and marketing'
-    seed_2 = 'The AI Era Accelerates Marketing Agencies From Services To Solutions In 2024'
-    seed_3 = 'Analytics applications for marketing and advertising services'
-    seed_4 = 'Data engineering and technology stack for business intelligence'
-    seed_5 = 'Articles about marketers using machine learning to improve the customer experience'
-
-    seeds_list = [
-        seed_1,
-        seed_2,
-        seed_3,
-        seed_4,
-        seed_5
-    ]
-
-    vectors = []
-
-    for seed in seeds_list:
+    # OpenAI supports up to 2048 inputs per call, batch in chunks if needed
+    BATCH_SIZE = 2000
+    all_embeddings = []
+    for i in range(0, len(training_texts), BATCH_SIZE):
+        batch = training_texts[i:i + BATCH_SIZE]
         response = openai.embeddings.create(
             model="text-embedding-3-small",
-            input=seed
+            input=batch
         )
-        vectors.append(response.data[0].embedding)
+        all_embeddings.extend([item.embedding for item in response.data])
 
-    seed_vectors = vectors
+    # Assign embeddings to articles
+    for article, embedding in zip(retrieved_news, all_embeddings):
+        article['article_vector'] = embedding
 
-    # Calculate distances
+    # Get cached seed vectors (computed once, reused across requests)
+    seed_vectors = get_seed_vectors()
+
+    # Calculate similarity scores (higher is better)
     for article in retrieved_news:
-        article_distance = min(
-            euclidean_distance(seed, article['article_vector']) for seed in seed_vectors
+        article_similarity = max(
+            cosine_similarity(seed, article['article_vector']) for seed in seed_vectors
         )
-        article['article_min_distance'] = article_distance
+        article['article_max_similarity'] = article_similarity
 
-    # Sort and store the news
-    sorted_news = sorted(retrieved_news, key=lambda k: k['article_min_distance'])
+    # Sort by highest similarity first
+    sorted_news = sorted(retrieved_news, key=lambda k: k['article_max_similarity'], reverse=True)
 
     # Store news in Google Cloud Storage bucket
     gcs = storage.Client()
