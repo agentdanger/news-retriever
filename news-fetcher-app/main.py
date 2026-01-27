@@ -99,7 +99,23 @@ feeds = {
     'Moz Blog': 'https://moz.com/blog/feed.xml',
     'Semrush Blog': 'https://www.semrush.com/blog/feed/',
     'Chief Martec': 'https://chiefmartec.com/feed',
-    'MarTech (News & Insights)': 'https://martech.org/feed/'
+    'MarTech (News & Insights)': 'https://martech.org/feed/',
+    # AI/ML Focused
+    'OpenAI Blog': 'https://openai.com/blog/rss.xml',
+    'Google AI Blog': 'https://blog.google/technology/ai/rss/',
+    'Anthropic News': 'https://www.anthropic.com/rss.xml',
+    'Hugging Face Blog': 'https://huggingface.co/blog/feed.xml',
+    'DeepMind Blog': 'https://deepmind.google/blog/rss.xml',
+    # Marketing + Data Intersection
+    'Marketing AI Institute': 'https://www.marketingaiinstitute.com/blog/rss.xml',
+    'Econsultancy': 'https://econsultancy.com/feed/',
+    'Think with Google': 'https://www.thinkwithgoogle.com/rss/',
+    'Content Marketing Institute': 'https://contentmarketinginstitute.com/feed/',
+    # Data Engineering/Analytics
+    'dbt Blog': 'https://www.getdbt.com/blog/rss.xml',
+    'Databricks Blog': 'https://www.databricks.com/feed',
+    'Snowflake Blog': 'https://www.snowflake.com/feed/',
+    'Data Engineering Weekly': 'https://www.dataengineeringweekly.com/feed'
 }
 
 MAX_ARTICLES_PER_FEED = 25 # Limit articles per feed
