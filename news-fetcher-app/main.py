@@ -337,7 +337,9 @@ def fetch_news():
         return "<h1>No news articles were fetched.</h1>"
 
     # Batch embed all articles in one API call (major cost savings)
-    training_texts = [article['training_data'] for article in retrieved_news]
+    # Truncate texts to stay within the text-embedding-3-small 8192 token limit
+    MAX_CHARS = 30000  # ~7500 tokens at ~4 chars/token, safely under 8192
+    training_texts = [article['training_data'][:MAX_CHARS] for article in retrieved_news]
 
     # OpenAI supports up to 2048 inputs per call, batch in chunks if needed
     BATCH_SIZE = 2000
