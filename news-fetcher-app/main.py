@@ -364,6 +364,10 @@ def fetch_news():
         )
         article['article_max_similarity'] = article_similarity
 
+    # Remove embedding vectors before storing (saves space in the response)
+    for article in retrieved_news:
+        article.pop('article_vector', None)
+
     # Sort by highest similarity first
     sorted_news = sorted(retrieved_news, key=lambda k: k['article_max_similarity'], reverse=True)
 
